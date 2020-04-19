@@ -1,0 +1,42 @@
+0、环境信息
+    windows 7
+    python3.6
+    celery
+    redis
+    
+1、插件安装
+    1.1安装celery
+      我的电脑上装了多个版本的python,所以为了避免出现问题，我采用的安装指令是：python36 -m pip install celery 。当然前提是要配python3.6的环境变量，此处略）
+    1.2安装redis
+      http://www.redis.cn/download.html
+      选择windows最新稳定版的下载，
+      启动redis时命令行一闪而过，解决办法：
+      进入redis安装目录下执行如下指令：
+          redis-server.exe redis.windows.conf
+      问题解决。
+      
+    为了确认redis是否可用，可以双击redis-cli.exe  然后进行一些set 和 get指令，如果都没有问题，证明redis安装并配置成功。
+      
+2、构建项目
+    2.1构消费者
+    celery的本质就是管理消息队列。针对一个消息队列，肯定有生产者和消费者。我们创建一个tasks.py，用于消费消息，
+
+        from celery import Celery
+        app = Celery('tasks', backend='redis://localhost:6379/1', broker='redis://localhost:6379/0')
+
+        @app.task
+        def add(x, y):
+            return x + y
+
+    启动消费者：   celery -A tasks worker --loglevel=info
+
+    2.2构建生产者 star.py，代码如下：
+        from tasks import add
+
+        result=add.delay(3,6)
+        #print(result.ready())
+        #print(result.get(timeout=10))
+        
+     启动生产者：
+         执行指令：   python36 star.py 
+         没有报任何错误。但是查看消费者端的命令行，有报错
